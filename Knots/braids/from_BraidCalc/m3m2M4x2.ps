@@ -1,0 +1,704 @@
+%!PS-Adobe-1.0
+%%Title: igosup
+%%CreationDate: Tue Oct 11 17:01:27 1994
+%%BoundingBox: 0 0 400 400
+%%Pages: 1
+%%DocumentFonts: Times-Roman Helvetica-Bold 
+%%EndComments
+/atkDict 8 dict def
+atkDict begin
+
+gsave
+/pagesave 0 def
+/beginpage {/pagesave save store} def
+/endpage {showpage pagesave restore} def
+/tF0 /Times-Roman findfont def
+/godict 55 dict def
+/tF1 /Helvetica-Bold findfont def
+/tL {/tY exch store} bind def
+/tY 0 def
+ 
+godict begin
+
+% basic parameters
+/Black {0 0 0 setrgbcolor} def
+/White {1 1 1 setrgbcolor} def
+/BoardColor {1 1 1 setrgbcolor} def  
+%/BoardColor {.94 .90 .55 setrgbcolor} def    % for color printer (burlywood1)
+/linethick .04 def	% linethickness
+
+%derived parameters
+/bscolor /Black load def			% black stone color
+/bsnotecolor  /White load def			% color of notes on black stones
+/bsradius  .1 def				% black stone radius
+
+/wscolor /White load def			% white stone color
+/wsedgecolor  /Black load def		% color of whiteestone edge
+/wsnotecolor  /Black load def			% color of notes on white stones
+/wsthick  linethick 5 mul 4 div def		% white stone edge thickness
+/wsradius bsradius wsthick 2 div sub def   	%white stone radius
+
+/linecolor /Black load def			% color of lines on board
+% /linethick   defined above
+/edgethick linethick 1.5 mul def		% thickness of edge lines
+
+/hoshicolor /linecolor load def			% color of hoshi dot
+/hoshiradius  linethick 3 mul def		% radius of hoshi dot
+
+/boardnotecolor /Black load def
+/notethick linethick 2 mul def			% thickness of lines in symbols
+/noteaura .15 def				% erase lines closer to letters than this
+/symradius wsradius .7 mul def		% radius of symbols
+/letht .53 def					% height of letters and digits
+/notew .84 def					% width of multidigit numbers
+/corner  2 sqrt 2 div symradius mul def	% x&y coords of end of diagonal cross
+/trix 3 sqrt 2 div symradius mul def		% x for triangle bottom corners
+
+/strbounds {		% start with string on stack.  leave  llx urx ury lly
+	gsave 
+	newpath 0 0 moveto 
+	false charpath flattenpath pathbbox  % llx lly urx ury
+	3 -1 roll				% llx urx ury lly
+	grestore
+} def
+
+% define fonts for notes in stones	
+	/Helvetica-Bold  findfont  setfont
+% onedigitfont is scaled so height of (8) is letht
+	(8) strbounds sub  /dy exch def   pop pop
+ /onedigitfont
+	currentfont  letht dy div dup neg [ 1 0 0 1 0 0 ] scale
+	makefont  def
+% twodigitfont is same height but scaled to fit (88) in notew width
+	(88) strbounds   pop pop    exch sub  /dx exch def
+/twodigitfont  onedigitfont  [ notew dx div   0 0  1 0 0 ]  makefont  def
+	(188) strbounds  pop pop    exch sub  /dx exch def
+/threedigitfont   onedigitfont  [ notew dx div   0 0  1 0 0 ]  makefont  def
+
+(%) {			% draw a diagonal cross
+	moveto  corner neg dup rmoveto 
+	corner 2 mul 
+	dup dup rlineto 
+	dup neg  0 rmoveto 
+	dup neg rlineto
+} def
+
+(+) {			% draw an orthogonal cross
+	moveto  symradius neg 0 rmoveto  symradius 2 mul  0 rlineto
+	symradius neg dup rmoveto 0 symradius 2 mul rlineto
+	
+} def
+
+(#) {			% draw a square
+	moveto  corner dup rmoveto
+	corner 2 mul   
+	dup neg 0 rlineto  dup 0 exch neg rlineto 
+	0 rlineto closepath
+} def
+
+(@) {			% draw a circle 
+	symradius notethick 2 div sub    0 360 arc
+} def
+
+(^) {			% draw a triangle
+	moveto  0  symradius neg  rmoveto  
+	trix  symradius 1.5 mul  rlineto 
+	trix -2 mul  0  rlineto 
+	closepath
+} def
+
+(-) {			% draw a dash
+	moveto  symradius neg 0  rmoveto  
+	symradius 2 mul  0  rlineto 
+} def
+
+/dxdy {		% compute dx and dy to center the string on stack
+	strbounds
+	add 2 div neg /dy exch def
+	add 2 div neg /dx exch def
+} def
+
+/showcentered {  % shows its arg string centered at current point 
+	dup dxdy dx dy rmoveto show		
+} def
+
+/noteparams {    % compute offset to center string on a point
+			% stack : n       
+			% results: set sproc, dx and dy;  choose and set font
+	/n exch def
+	godict n known {
+		% special symbol
+		/proc godict n get def
+	}{
+		% text : get offsets from pathbbox
+		/proc 0 def
+		[ onedigitfont onedigitfont twodigitfont threedigitfont ]
+			n length {get} stopped {onedigitfont} if setfont
+		n dxdy
+	} ifelse
+} def
+
+
+/note {		% draw annotation    stack: x y note
+		% notes are:  integer  letter  @  +  %  #  ^
+		% color must have been set
+	/n exch def 
+	newpath		% at center of spot
+	/proc load  0 ne {
+		% special symbol
+		0 setlinecap
+		notethick setlinewidth
+		proc  stroke     % perform function for special symbol
+	}{
+		% text
+		 moveto  dx dy rmoveto
+		n show
+	} ifelse
+} def
+
+/wst {		% white stone     stack: x y
+	2 copy
+	wscolor
+	newpath wsradius 0 360 arc fill
+	wsthick setlinewidth
+	wsedgecolor
+	newpath wsradius 0 360 arc stroke
+} def
+
+/bst {		% black stone    stack: x y
+	bscolor
+	newpath bsradius 0 360 arc fill
+} def
+
+/braid {
+  
+    2 copy
+    moveto 
+    1 1 rlineto
+    stroke
+    newpath
+    moveto
+    0 1 rmoveto
+    .4 -.4 rlineto .2 -.2 rmoveto .4 -.4 rlineto
+    stroke
+}def
+
+/vbraid {
+  
+    2 copy
+    moveto 
+    1 1 rlineto
+    stroke
+    newpath
+    moveto
+    1 0 rmoveto
+    -.4 .4 rlineto -.2 .2 rmoveto -.4 .4 rlineto
+    stroke
+}def
+
+
+/magbraid {
+  
+    2 copy
+    moveto 
+    1 1 rlineto
+    stroke
+    newpath
+    2 copy
+    moveto
+    0 1 rmoveto
+    .3375 -.3375 rlineto .25 -.25 rmoveto .4125 -.4125 rlineto
+    stroke
+   newpath
+    2 copy
+    moveto
+    0 .15 rmoveto
+    1 1 rlineto
+    stroke
+    newpath
+    moveto
+    0 1.15 rmoveto
+    .4125 -.4125 rlineto .25 -.25 rmoveto .3375 -.3375 rlineto
+    stroke
+}def
+
+/vmagbraid {
+  
+    2 copy
+    moveto 
+    1 1 rlineto
+    stroke
+    newpath
+    2 copy
+    moveto
+    1 0 rmoveto
+    -.35 .35 rlineto -.30 .30 rmoveto -.35 .35 rlineto
+    stroke
+   newpath
+    2 copy
+    moveto
+    .15 0 rmoveto
+    1 1 rlineto
+    stroke
+    newpath
+    moveto
+    1.175 0 rmoveto
+    -.35 .35 rlineto -.30 .30 rmoveto -.35 .35 rlineto
+    stroke
+}def
+
+/ibraid {
+  
+    2 copy
+    moveto
+    .4 .4 rlineto .2 .2 rmoveto .4 .4 rlineto	
+    stroke
+    newpath
+    moveto
+    0 1 rmoveto
+    1 -1 rlineto
+    stroke
+}def
+
+
+/magibraid {
+  
+    2 copy
+    moveto 
+    .35 .35 rlineto .30 .30 rmoveto .35 .35 rlineto
+    stroke
+    newpath
+    2 copy
+    moveto
+    0 1 rmoveto
+    1 -1 rlineto	
+    stroke
+    newpath
+    2 copy
+    moveto
+    0 .15 rmoveto
+    .35 .35 rlineto .30 .30 rmoveto .35 .35 rlineto
+    stroke
+    newpath
+    moveto
+    0 1.175 rmoveto
+    1 -1 rlineto
+    stroke
+}def
+
+/vibraid {
+  
+    2 copy
+    moveto
+    .4 .4 rlineto .2 .2 rmoveto .4 .4 rlineto	
+    stroke
+    newpath
+    moveto
+    1 0 rmoveto
+    -1 1 rlineto
+    stroke
+}def
+
+/vmagibraid {
+  
+    2 copy
+    moveto 
+    .35 .35 rlineto .30 .30 rmoveto .35 .35 rlineto
+    stroke
+    newpath
+    2 copy
+    moveto
+    1 0 rmoveto
+    -1 1 rlineto	
+    stroke
+    newpath
+    2 copy
+    moveto
+    .15 0 rmoveto
+    .35 .35 rlineto .30 .30 rmoveto .35 .35 rlineto
+    stroke
+    newpath
+    moveto
+    1.175 0 rmoveto
+    -1 1 rlineto
+    stroke
+}def
+
+
+/bbraid {
+  
+    2 copy
+    moveto 
+    .33333 0 rlineto
+    .166667 .33333 rlineto
+    -.166667 .33333 rlineto
+    -.166667 0 rlineto
+    -.166667 .33333 rlineto
+    .166667 .33333 rlineto
+    .6666667 0 rlineto
+    .166667 -.33333 rlineto		
+    stroke
+    newpath
+    moveto
+    0.5 .33333 rmoveto
+    .33333 0 rlineto
+    .166667 -.33333 rlineto 
+    stroke
+}def
+
+/magnot{
+    2 copy
+    moveto
+    .4 0 rlineto
+    .2 .15 rlineto
+    .4 0 rlineto
+    stroke
+    newpath
+    moveto
+    0 .15 rmoveto
+    .4 0 rlineto
+    .2 -.15 rmoveto
+    .4 0 rlineto
+    stroke
+    
+}def
+
+/maginot{
+    2 copy
+    moveto
+    .4 0 rlineto
+    .2 .15 rmoveto
+    .4 0 rlineto
+    stroke
+    newpath
+    moveto
+    0 .15 rmoveto
+    .4 0 rlineto
+    .05 -.0375 rlineto
+    .1 -.075 rlineto
+    .05 -.0375 rlineto
+    .4 0 rlineto
+    stroke
+    
+}def
+
+/magbbraid {
+  
+    2 copy
+    moveto 
+    .275 0 rlineto
+    .166667 .33333 rlineto
+    .141633  0 rlineto
+    .166667 -.33333 rlineto
+    .25 0 rlineto
+    stroke
+    newpath
+    2 copy
+    moveto
+    0 .15 rmoveto
+    .1717 0 rlineto
+    0.129166 0.25833 rlineto
+    -0.129166 0.25833 rlineto
+    -.166667 .33333 rlineto
+    stroke
+    newpath
+    2 copy
+    moveto
+    0 1.15 rmoveto
+    .166667 .33333 rlineto
+    .666667 0 rlineto
+    .166667 -.33333 rlineto		
+    stroke	
+    newpath
+    2 copy
+    moveto
+    1 1 rmoveto
+    -.083333 0 rlineto   
+    -.166667 .33333 rlineto
+    -.5000 0 rlineto
+    -.129166 -.2583 rlineto
+    .29583333 -.59166666 rlineto
+    .08333 0 rlineto
+    stroke
+    newpath
+    moveto
+    1 .15  rmoveto
+    -.166667 0 rlineto
+    -.166667 .33333 rlineto
+    -.166667 0 rlineto
+    stroke
+
+}def
+
+/magibbraid {
+  
+    2 copy
+    moveto
+    0 1.15 rmoveto
+    .275 0 rlineto
+    .166667 -.33333 rlineto
+    .141633  0 rlineto
+    .166667 .33333 rlineto
+    .25 0 rlineto
+    stroke
+    newpath
+    2 copy
+    moveto
+    0 1 rmoveto
+    .1717 0 rlineto
+    0.129166 -0.25833 rlineto
+    -0.129166 -0.25833 rlineto
+    -.166667 -.33333 rlineto
+    stroke
+    newpath
+    2 copy
+    moveto
+    .166667 -.33333 rlineto
+    .666667 0 rlineto
+    .166667 .33333 rlineto		
+    stroke	
+    newpath
+    2 copy
+    moveto
+    1 .15 rmoveto
+    -.083333 0 rlineto   
+    -.166667 -.33333 rlineto
+    -.5000 0 rlineto
+    -.129166 .2583 rlineto
+    .29583333 .59166666 rlineto
+    .08333 0 rlineto
+    stroke
+    newpath
+    moveto
+    1 1  rmoveto
+    -.166667 0 rlineto
+    -.166667 -.33333 rlineto
+    -.166667 0 rlineto
+    stroke
+
+}def
+
+
+
+/cbraid {
+  
+    2 copy
+    moveto
+    0 1 rmoveto
+    .33333 0 rlineto
+    .166667 -.33333 rlineto
+    -.166667 -.33333 rlineto
+    -.166667 0 rlineto
+    -.166667 -.33333 rlineto
+    .166667 -.33333 rlineto
+    .6666667 0 rlineto
+    .166667 .33333 rlineto		
+    stroke
+    newpath
+    moveto
+    0.5 .666667 rmoveto
+    .33333 0 rlineto
+    .166667 .33333 rlineto 
+    stroke
+}def
+
+/dbraid {
+  
+    2 copy
+    moveto
+    0 1 rmoveto
+    .33333 0 rlineto
+    .166667 -.33333 rlineto
+    -.166667 -.33333 rlineto
+    -.166667 0 rlineto
+    -.166667 -.33333 rlineto
+    .166667 -.33333 rlineto
+    .6666667 0 rlineto
+    .166667 .33333 rlineto		
+    stroke
+    newpath
+    moveto
+    0.5 .666667 rmoveto
+    .33333 0 rlineto
+    .166667 .33333 rlineto 
+    stroke
+}def
+
+/ident {
+    moveto 
+    1 0 rlineto
+    stroke
+} def
+
+/magident {
+    2 copy
+    moveto
+    1 0 rlineto
+    stroke
+    newpath
+    moveto
+    0 .15 rmoveto
+    1 0 rlineto
+    stroke
+}def
+
+/vmagident {
+    2 copy
+    moveto 
+    0 1 rlineto
+    stroke
+    newpath
+    moveto
+    .15 0 rmoveto
+    0 1 rlineto
+    stroke
+} def
+
+/wstn {	% white stone with note    stack: x y note
+	3 copy noteparams
+	wst
+	wsnotecolor
+	note
+} def
+
+/bstn {		% black stone with note    stack: x y note
+	3 copy  noteparams
+	bst
+	bsnotecolor
+	note
+} def
+
+/hoshi {	% draw hoshi dot    stack: x y
+	hoshicolor
+	newpath hoshiradius 0 360 arc fill
+} def
+
+
+/spotn {	% note on empty spot   stack: x y note
+		% stroke with wide stroke and then scale to size to fill
+	3 copy		% x y n x y n
+	/n exch def
+	% figure out what part of grid to hide
+	n noteparams
+	gsave
+	newpath  translate 0 0	
+	/proc load 0 ne {
+		proc  strokepath   % outline the symbol
+	}{
+		moveto dx dy rmoveto
+		n false charpath flattenpath 
+	} ifelse
+	noteaura setlinewidth	
+	1 setlinejoin
+	strokepath 
+	0 0 noteaura 2 mul 0 360 arc
+	BoardColor  fill
+	grestore
+
+	boardnotecolor  note
+} def
+
+end	% stop defining godict
+
+grestore
+
+beginpage
+380 tL
+
+gsave
+20 tY 361 sub translate
+0 0 moveto 362 0 lineto 362 373 lineto 0 373 lineto closepath clip newpath
+  % gofig: Go Diagram   19 rows by 19 columns
+
+ godict begin
+ 16.9787 17.5193  % spot size
+ dtransform round exch round exch idtransform
+ /sph exch def  /spw exch def  % in print pixels
+ 362 spw -18 mul add 2 div 
+ 373 sph 18 mul add 2 div 
+translate     spw sph neg scale
+  /Times-Roman  findfont [0.680 0 0 -0.680 0 0 ]
+  makefont setfont
+%  /inxlet (ABCDEFGHJKLMNOPQRSTUVWXYZ) def
+%  0 1 18 { %draw top/bottom indices 
+%  	dup dup  newpath 
+%  	inxlet exch 1 getinterval /let exch def
+%  	-0.925 moveto let showcentered
+%  	18.925 moveto let showcentered
+%  } for
+%  0 1 18 { % draw side indices
+%  	dup dup newpath
+%  	19 exch sub inxlet cvs /let exch def
+%  	-0.925 exch moveto let showcentered
+%  	18.925 exch moveto let showcentered
+%  } for
+ 2 setlinecap  linecolor  linethick  setlinewidth
+
+
+4 4  magibraid
+5 2  magbbraid
+2 3  magbraid
+3 2  magbraid
+1 1  magident
+1 2  magident
+1 3  magident
+1 4  magident
+1 5  magident
+1 6  magident
+1 7  magident
+1 8  magident
+1 9  magident
+2 1  magident
+2 2  magident
+2 5  magident
+2 6  magident
+2 7  magident
+2 8  magident
+2 9  magident
+3 1  magident
+3 4  magident
+3 5  magident
+3 6  magident
+3 7  magident
+3 8  magident
+3 9  magident
+4 1  magident
+4 2  magident
+4 3  magident
+4 6  magident
+4 7  magident
+4 8  magident
+4 9  magident
+5 1  magident
+5 4  magident
+5 5  magident
+5 6  magident
+5 7  magident
+5 8  magident
+5 9  magident
+6 1  magident
+6 2  magident
+6 3  magident
+6 4  magident
+6 5  magident
+6 6  magident
+6 7  magident
+6 8  magident
+6 9  magident
+
+%2 0 magbraid
+%1 0 magident
+%1 1 magident
+%3 0 magident
+%3 1 magident
+%2 2 magbbraid
+%1 2 magident
+%1 3 magident
+%3 2 magident
+%3 3 magident
+
+
+  end  % discard godict
+grestore
+endpage
+
